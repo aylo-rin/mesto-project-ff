@@ -10,6 +10,21 @@
   margin-bottom: 10px;
 }
 
+.form__input_type_error {
+  border-bottom-color: red;
+}
+
+.form__input-error {
+  display: none;
+  color: red;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.popup__error_visible {
+  display: block;
+}
+
 .popup__input:last-of-type {
   margin-bottom: 0;
 }
