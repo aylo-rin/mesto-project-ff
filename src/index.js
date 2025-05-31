@@ -5,11 +5,7 @@ import {
   closePopup,
   setEventListenerClose,
 } from "./components/modal.js";
-import {
-  enableValidation,
-  clearValidation,
-  validationConfig,
-} from "./components/validation.js";
+import { enableValidation, clearValidation } from "./components/validation.js";
 import {
   getInitialCards,
   getUserInfo,
@@ -33,7 +29,8 @@ const formEditProfileImage =
 const inputEditProfileImage = document.querySelector(
   ".popup__image_input_type_url"
 );
-const submitEditProfileImageButton = formEditProfileImage.querySelector('.popup__button');
+const submitEditProfileImageButton =
+  formEditProfileImage.querySelector(".popup__button");
 
 const buttonEditProfile = document.querySelector(".profile__edit-button");
 const popupEditProfile = document.querySelector(".popup_type_edit");
@@ -42,14 +39,14 @@ const inputEditProfileName = document.querySelector(".popup__input_type_name");
 const inputEditProfileAbout = document.querySelector(
   ".popup__input_type_description"
 );
-const submitEditProfileButton = formEditProfile.querySelector('.popup__button');
+const submitEditProfileButton = formEditProfile.querySelector(".popup__button");
 
 const buttonAddCard = document.querySelector(".profile__add-button");
 const popupAddCard = document.querySelector(".popup_type_new-card");
 const formAddCard = popupAddCard.querySelector(".popup__form");
 const inputCardName = document.querySelector(".popup__input_type_card-name");
 const inputCardLink = document.querySelector(".popup__input_type_url");
-const submitAddCardButton = formAddCard.querySelector('.popup__button');
+const submitAddCardButton = formAddCard.querySelector(".popup__button");
 
 const popupImage = document.querySelector(".popup_type_image");
 const popupImagePhoto = popupImage.querySelector(".popup__image");
@@ -60,8 +57,21 @@ const popupCardDeletionButton = popupCardDeletion.querySelector(
   ".popup__button-delete"
 );
 
+const validationConfig = {
+  formSelector: ".popup__form",
+  inputSelector: ".popup__input",
+  submitButtonSelector: ".popup__button",
+  inactiveButtonClass: "popup__button_disabled",
+  inputErrorClass: "popup__input_type_error",
+  errorClass: "popup__error_visible",
+};
+
 let cardToDelete;
 let userId;
+
+function renderLoading(button) {
+  button.textContent = "Сохранение...";
+}
 
 function handleImageClick(link, name) {
   popupImagePhoto.src = link;
@@ -79,20 +89,27 @@ function handleBinClick(cardElement, cardId) {
 }
 
 function addCard(name, link) {
-  submitAddCardButton.textContent = 'Сохранение...';
-  addNewCard(name, link)
+  renderLoading(submitAddCardButton);
+  return addNewCard(name, link)
     .then((card) => {
       const newCard = createCardElement(card, userId, {
         handleImageClick,
         handleBinClick,
-        handleLikeClick: (cardElement, cardId, isLiked) => 
-          handleLikeClick(cardElement, cardId, isLiked, addLike, removeLike)
+        handleLikeClick: (cardId, isLiked, likeButton, likesCounter) =>
+          handleLikeClick(
+            cardId,
+            isLiked,
+            likeButton,
+            likesCounter,
+            addLike,
+            removeLike
+          ),
       });
       cardsContainer.prepend(newCard);
     })
     .catch((err) => console.error("Ошибка:", err))
     .finally(() => {
-      submitAddCardButton.textContent = 'Сохранить';
+      submitAddCardButton.textContent = "Сохранить";
     });
 }
 
@@ -101,8 +118,15 @@ function addInitialCard(card) {
     createCardElement(card, userId, {
       handleImageClick,
       handleBinClick,
-      handleLikeClick: (cardElement, cardId, isLiked) => 
-        handleLikeClick(cardElement, cardId, isLiked, addLike, removeLike)
+      handleLikeClick: (cardId, isLiked, likeButton, likesCounter) =>
+        handleLikeClick(
+          cardId,
+          isLiked,
+          likeButton,
+          likesCounter,
+          addLike,
+          removeLike
+        ),
     })
   );
 }
@@ -114,46 +138,45 @@ function renderInitialCard(cards) {
 function handleEditProfileImageSubmit(evt) {
   evt.preventDefault();
 
-  submitEditProfileImageButton.textContent = 'Сохранение...';
+  renderLoading(submitEditProfileImageButton);
 
   editProfileAvatar(inputEditProfileImage.value)
     .then(() => {
       profileImage.style.backgroundImage = `url(${inputEditProfileImage.value})`;
       closePopup(profileImageEditPopup);
-      evt.target.reset();
+      formEditProfileImage.reset();
     })
     .catch((err) => console.error(err))
     .finally(() => {
-      submitEditProfileImageButton.textContent = 'Сохранить';
+      submitEditProfileImageButton.textContent = "Сохранить";
     });
 }
 
 function handleEditProfileFormSubmit(evt) {
   evt.preventDefault();
-  
-  submitEditProfileButton.textContent = 'Сохранение...';
-  
+
+  renderLoading(submitEditProfileButton);
+
   editProfileInfo(inputEditProfileName.value, inputEditProfileAbout.value)
     .then(() => {
       profileName.textContent = inputEditProfileName.value;
       profileAbout.textContent = inputEditProfileAbout.value;
       closePopup(popupEditProfile);
       formEditProfile.reset();
-      clearValidation(formEditProfile, validationConfig);
     })
     .catch((err) => {
       console.error(err);
     })
     .finally(() => {
-      submitEditProfileButton.textContent = 'Сохранить';
+      submitEditProfileButton.textContent = "Сохранить";
     });
 }
 
 function setEventListenerOpenPopupProfile(button, popup) {
   button.addEventListener("click", function () {
+    clearValidation(formEditProfile, validationConfig);
     inputEditProfileName.value = profileName.textContent;
     inputEditProfileAbout.value = profileAbout.textContent;
-    clearValidation(formEditProfile, validationConfig);
     openPopup(popup);
   });
 }
@@ -169,21 +192,28 @@ profileImageEditPopup.addEventListener("submit", handleEditProfileImageSubmit);
 formEditProfile.addEventListener("submit", handleEditProfileFormSubmit);
 setEventListenerOpenPopupProfile(buttonEditProfile, popupEditProfile);
 
-buttonAddCard.addEventListener("click", () => openPopup(popupAddCard));
+buttonAddCard.addEventListener("click", () => {
+  clearValidation(formAddCard, validationConfig);
+  openPopup(popupAddCard);
+});
 
 popupCardDeletionButton.addEventListener("click", () => {
-  deleteCard(cardToDelete._id).then(() => {
-    cardToDelete.element.remove();
-    closePopup(popupCardDeletion);
-  });
+  deleteCard(cardToDelete._id)
+    .then(() => {
+      cardToDelete.element.remove();
+      closePopup(popupCardDeletion);
+    })
+    .catch((err) => console.error("Ошибка:", err));
 });
 
 formAddCard.addEventListener("submit", function (event) {
   event.preventDefault();
   addCard(inputCardName.value, inputCardLink.value)
-  formAddCard.reset();
-  closePopup(popupAddCard);
-  clearValidation(formAddCard, validationConfig);
+    .then(() => {
+      closePopup(popupAddCard);
+      formAddCard.reset();
+    })
+    .catch((err) => console.error("Ошибка:", err));
 });
 
 Promise.all([getUserInfo(), getInitialCards()])

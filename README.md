@@ -1,3 +1,3 @@
 # Проектная работа Mesto
 
-https://github.com/aylo-rin/mesto-project-ff
+https://aylo-rin.github.io/mesto-project-ff/
