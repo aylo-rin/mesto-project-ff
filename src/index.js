@@ -106,6 +106,8 @@ function addCard(name, link) {
           ),
       });
       cardsContainer.prepend(newCard);
+      closePopup(popupAddCard);
+      formAddCard.reset();
     })
     .catch((err) => console.error("Ошибка:", err))
     .finally(() => {
@@ -209,11 +211,6 @@ popupCardDeletionButton.addEventListener("click", () => {
 formAddCard.addEventListener("submit", function (event) {
   event.preventDefault();
   addCard(inputCardName.value, inputCardLink.value)
-    .then(() => {
-      closePopup(popupAddCard);
-      formAddCard.reset();
-    })
-    .catch((err) => console.error("Ошибка:", err));
 });
 
 Promise.all([getUserInfo(), getInitialCards()])
